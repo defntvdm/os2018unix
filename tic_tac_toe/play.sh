@@ -1,10 +1,18 @@
 #!/bin/bash
 
-clear
+if [ "$1" == "-h" ] || [ "$1" == "--help" ]; then
+    echo "Используйте цифры с NumLock для комфортной игры"
+    echo -e " 7 ┃ 8 ┃ 9"
+    echo -e "━━━╋━━━╋━━━"
+    echo -e " 4 ┃ 5 ┃ 6"
+    echo -e "━━━╋━━━╋━━━"
+    echo -e " 1 ┃ 2 ┃ 3"
+    exit 0
+fi
 
+clear
 fifo1=/tmp/my_pipe_1
 fifo2=/tmp/my_pipe_2
-my_pid=$$
 
 if [ ! -e $fifo1 ] || [ ! -e $fifo2 ]; then
     rm $fifo1 $fifo2 >/dev/null 2>&1
@@ -24,25 +32,25 @@ else
 fi
 
 trap "echo quit > $w && rm -f $w >/dev/null 2>&1" EXIT
-echo Use your Num to play \(the same location\)
+echo "Играйте на NumLock"
 echo "Connected" > $w &
-cat < $r
+cat $r
 
 MAP=( "." "." "." "." "." "." "." "." "." )
 
-find_looser ()
+find_loser ()
 {
     if [ "$1" == "X" ]; then
         if [ $ME == 1 ]; then
-            echo -e "\033[1;32mYOU WIN :-)\033[0m"
+            echo -e "\033[1;32mВы выиграли :-)\033[0m"
         else
-            echo -e "\033[1;31mYOU LOSE :-(\033[0m"
+            echo -e "\033[1;31mВы проиграли :-(\033[0m"
         fi
     else
         if [ $ME == 1 ]; then
-            echo -e "\033[1;31mYOU LOSE :-(\033[0m"
+            echo -e "\033[1;31mВы проиграли :-(\033[0m"
         else
-            echo -e "\033[1;32mYOU WIN :-)\033[0m"
+            echo -e "\033[1;32mВы выиграли :-)\033[0m"
         fi
     fi
     rm $r $w >/dev/null 2>&1
@@ -59,28 +67,28 @@ draw_field ()
     echo -e " ${MAP[0]} ┃ ${MAP[1]} ┃ ${MAP[2]}"
     # проверочка на проигрыш)
     if [ ${MAP[0]} == ${MAP[3]} ] && [ ${MAP[3]} == ${MAP[6]} ] && [ ! "${MAP[0]}" == "." ]; then
-        find_looser ${MAP[0]}
+        find_loser ${MAP[0]}
     fi
     if [ ${MAP[0]} == ${MAP[1]} ] && [ ${MAP[1]} == ${MAP[2]} ] && [ ! "${MAP[0]}" == "." ]; then
-        find_looser ${MAP[0]}
+        find_loser ${MAP[0]}
     fi
     if [ ${MAP[0]} == ${MAP[4]} ] && [ ${MAP[4]} == ${MAP[8]} ] && [ ! "${MAP[0]}" == "." ]; then
-        find_looser ${MAP[0]}
+        find_loser ${MAP[0]}
     fi
     if [ ${MAP[6]} == ${MAP[7]} ] && [ ${MAP[7]} == ${MAP[8]} ] && [ ! "${MAP[6]}" == "." ]; then
-        find_looser ${MAP[6]}
+        find_loser ${MAP[6]}
     fi
     if [ ${MAP[6]} == ${MAP[4]} ] && [ ${MAP[4]} == ${MAP[2]} ] && [ ! "${MAP[2]}" == "." ]; then
-        find_looser ${MAP[2]}
+        find_loser ${MAP[2]}
     fi
     if [ ${MAP[1]} == ${MAP[4]} ] && [ ${MAP[4]} == ${MAP[7]} ] && [ ! "${MAP[1]}" == "." ]; then
-        find_looser ${MAP[1]}
+        find_loser ${MAP[1]}
     fi
     if [ ${MAP[2]} == ${MAP[5]} ] && [ ${MAP[5]} == ${MAP[8]} ] && [ ! "${MAP[2]}" == "." ]; then
-        find_looser ${MAP[2]}
+        find_loser ${MAP[2]}
     fi
     if [ ${MAP[3]} == ${MAP[4]} ] && [ ${MAP[3]} == ${MAP[5]} ] && [ ! "${MAP[3]}" == "." ]; then
-        find_looser ${MAP[3]}
+        find_loser ${MAP[3]}
     fi
     for cell in ${MAP[*]}; do
         if [ "$cell" == "." ]; then
