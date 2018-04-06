@@ -34,7 +34,7 @@ fi
 trap "echo quit > $w && rm -f $w >/dev/null 2>&1" EXIT
 echo "Играйте на NumLock"
 echo "Connected" > $w &
-cat < $r
+cat $r
 
 MAP=( "." "." "." "." "." "." "." "." "." )
 
@@ -42,9 +42,9 @@ find_loser ()
 {
     if [ "$1" == "X" ]; then
         if [ $ME == 1 ]; then
-            echo -e "\033[1;32mYOU WIN :-)\033[0m"
+            echo -e "\033[1;32mВы выиграли :-)\033[0m"
         else
-            echo -e "\033[1;31mYOU LOSE :-(\033[0m"
+            echo -e "\033[1;31mВы проиграли :-(\033[0m"
         fi
     else
         if [ $ME == 1 ]; then
