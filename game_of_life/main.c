@@ -10,6 +10,7 @@
 
 #define ALIVE   '#'
 #define DEAD    ' '
+#define PORTNO  8000
 
 unsigned char** map;
 int width;
@@ -29,23 +30,23 @@ void print_help(const char* const prog) {
     , prog);
 }
 
-void read_data(const char* const file_name) {
+int read_data(const char* const file_name) {
     int fd = open(file_name, 0, O_RDONLY);
     if (fd < 0) {
         perror("Open file error");
-        exit(1);
+        return 1;
     }
     struct stat file_stat;
     stat(file_name, &file_stat);
     unsigned char *buffer = (unsigned char*)malloc(file_stat.st_size);
     if (buffer == NULL) {
         perror("Malloc error");
-        exit(1);
+        return 1;
     }
-    int readed = read(fd, buffer, file_stat.st_size);
-    if (readed < 0) {
+    if (read(fd, buffer, file_stat.st_size) < 0) {
         perror("Read file error");
-        exit(1);
+        free(buffer);
+        return 1;
     }
     char* new_line = strchr((char*)buffer, '\n');
     width = new_line - (char*)buffer;
@@ -55,14 +56,16 @@ void read_data(const char* const file_name) {
         map[i] = mmap( NULL, width, O_RDWR, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
         if (map[i] < 0) {
             perror("mmap error");
-            exit(1);
+            free(buffer);
+            return 1;
         }
     }
     for (int i = 0; i < height; i++) {
-        memcpy(map[i], buffer, width);
-        buffer += width + 1;
+        memcpy(map[i], buffer + i * (width + 1), width);
     }
     close(fd);
+    free(buffer);
+    return 0;
 }
 
 void handle_connection(int fd) {
@@ -75,7 +78,10 @@ void handle_connection(int fd) {
     } else
         printf("Connection from: %s:%d\n", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
     for (int i = 0; i < height; i++) {
-        write(sock, map[i], width);
+        int got = 0;
+        while (got != width) {
+            got += write(sock, map[i] + got, width - got);
+        }
         write(sock, "\n", 1);
     }
     close(sock);
@@ -87,7 +93,7 @@ void handle(void) {
     struct sockaddr_in addr;
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons(8000);
+    addr.sin_port = htons(PORTNO);
     bind(server, (struct sockaddr*)&addr, sizeof(struct sockaddr_in));
     listen(server, 5);
     while (1)
@@ -153,7 +159,9 @@ int main(int argc, char **argv) {
         print_help(argv[0]);
         return 0;
     }
-    read_data(argv[1]);
+    if (read_data(argv[1])) {
+        return 1;
+    }
     int pid = fork();
     if (pid < 0) {
         perror("Fork error");
